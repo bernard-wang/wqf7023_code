@@ -1,5 +1,3 @@
-from config import RESOLUTION
-
 import os, re, glob
 
 import numpy as np
@@ -19,7 +17,7 @@ def load_tide(tide_file):
     return df
 
 
-def nearest_tide_for_file(las_path, tide_df):
+def nearest_tide(las_path, tide_df):
     m = re.search(r"(\d{8})_(\d{6})", os.path.basename(las_path))
     if not m:
         raise ValueError(f"No timestamp in filename: {las_path}")
@@ -83,7 +81,7 @@ def survey_bounds(las_dir_path):
     return (xmin, xmax, ymin, ymax)
 
 
-def make_grid_axes(bounds, res=RESOLUTION):
+def make_grid_axes(bounds, res=1.0):
     xmin, xmax, ymin, ymax = bounds
     x_bins = np.arange(np.floor(xmin), np.ceil(xmax) + res, res)
     y_bins = np.arange(np.floor(ymin), np.ceil(ymax) + res, res)
@@ -91,3 +89,11 @@ def make_grid_axes(bounds, res=RESOLUTION):
     gx = x_bins[:-1] + res / 2
     gy = y_bins[:-1] + res / 2
     return x_bins, y_bins, gx, gy, H, W
+
+
+def cell_indices(x, y, x_bins, y_bins):
+    """Map point coordinates to grid cell indices, clipped to bounds."""
+    H, W = len(y_bins) - 1, len(x_bins) - 1
+    ix = np.clip(np.digitize(x, x_bins) - 1, 0, W - 1)
+    iy = np.clip(np.digitize(y, y_bins) - 1, 0, H - 1)
+    return iy, ix
